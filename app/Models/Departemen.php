@@ -1,0 +1,21 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class Departemen extends Model
+{
+    use HasFactory;
+
+    protected $table = 'departemens';
+
+    protected $fillable = [
+        'kode_departemen',
+        'nama_departemen',
+        'kepala_divisi',
+        'lokasi_lantai',
+        'keterangan',
+    ];
+}
