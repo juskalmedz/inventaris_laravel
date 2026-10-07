@@ -4,32 +4,167 @@
 
 @section('content')
 <div class="space-y-5">
-    <!-- TOOLBAR & FILTER -->
-    <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row gap-3 items-center justify-between">
-        <form method="GET" action="{{ route('inventaris.index') }}" class="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
-            <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama atau kode aset..." 
-                class="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-rose-500 w-64">
-            
-            <select name="kategori_id" class="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold">
-                <option value="">Semua Kategori</option>
-                @foreach($kategoris as $k)
-                    <option value="{{ $k->id }}" {{ request('kategori_id') == $k->id ? 'selected' : '' }}>{{ $k->nama_kategori }}</option>
-                @endforeach
-            </select>
 
-            <select name="lokasi_id" class="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold">
-                <option value="">Semua Lokasi</option>
-                @foreach($lokasis as $l)
-                    <option value="{{ $l->id }}" {{ request('lokasi_id') == $l->id ? 'selected' : '' }}>{{ $l->nama_lokasi }}</option>
-                @endforeach
-            </select>
+    <!-- 1. SUMMARY STAT CARDS (1:1 IDENTIK DENGAN REACT APP) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs flex items-center justify-between">
+            <div>
+                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Katalog Aset</p>
+                <h4 class="text-xl font-extrabold text-slate-900 dark:text-white mt-0.5">{{ $totalAset ?? count($items) }} Jenis Barang</h4>
+                <span class="text-[11px] text-rose-600 dark:text-rose-400 font-semibold">
+                    {{ number_format($totalStok ?? 0, 0, ',', '.') }} Total Unit Fisik
+                </span>
+            </div>
+            <div class="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 flex items-center justify-center shrink-0">
+                <i data-lucide="box" class="w-5 h-5"></i>
+            </div>
+        </div>
 
-            <button type="submit" class="px-4 py-2 bg-slate-800 text-white rounded-xl text-xs font-bold hover:bg-slate-700">Filter</button>
+        <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs flex items-center justify-between">
+            <div>
+                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Taksiran Nilai</p>
+                <h4 class="text-xl font-extrabold text-slate-900 dark:text-white mt-0.5">
+                    Rp {{ number_format($totalNilai ?? 0, 0, ',', '.') }}
+                </h4>
+                <span class="text-[11px] text-blue-600 dark:text-blue-400 font-semibold truncate block">
+                    Valuasi Aset Terdaftar
+                </span>
+            </div>
+            <div class="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 flex items-center justify-center shrink-0">
+                <i data-lucide="coins" class="w-5 h-5"></i>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs flex items-center justify-between">
+            <div>
+                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Status Ketersediaan</p>
+                <h4 class="text-xl font-extrabold text-slate-900 dark:text-white mt-0.5">
+                    {{ number_format($stokTersedia ?? 0, 0, ',', '.') }} Unit Siap Pakai
+                </h4>
+                <span class="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                    {{ ($stokKritisCount ?? 0) > 0 ? ($stokKritisCount . ' Stok Kritis') : 'Stok Aman' }} &bull; {{ $stokHabisCount ?? 0 }} Habis
+                </span>
+            </div>
+            <div class="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 flex items-center justify-center shrink-0">
+                <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs flex items-center justify-between">
+            <div>
+                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Kondisi & Pemeliharaan</p>
+                <h4 class="text-xl font-extrabold text-slate-900 dark:text-white mt-0.5">
+                    {{ $kondisiBaikCount ?? 0 }} Aset Baik
+                </h4>
+                <span class="text-[11px] text-purple-600 dark:text-purple-400 font-semibold">
+                    {{ $dalamMaintenanceCount ?? 0 }} Perlu / Dalam Servis
+                </span>
+            </div>
+            <div class="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 flex items-center justify-center shrink-0">
+                <i data-lucide="wrench" class="w-5 h-5"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. ADVANCED FILTER & SEARCH PANEL (1:1 DENGAN REACT APP) -->
+    <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
+        <!-- ROW 1: SEARCH & ACTION BUTTONS -->
+        <form method="GET" action="{{ route('inventaris.index') }}" id="filterFormInv" class="space-y-3">
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                <div class="relative flex-1 min-w-[240px]">
+                    <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                    <input
+                        type="text"
+                        name="search"
+                        value="{{ request('search') }}"
+                        placeholder="Cari kode aset, nama barang, model, spesifikasi, atau catatan..."
+                        class="w-full pl-9 pr-8 py-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-500 text-slate-900 dark:text-white font-medium"
+                    />
+                    @if(request('search'))
+                        <a href="{{ route('inventaris.index') }}" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold">✕</a>
+                    @endif
+                </div>
+
+                <div class="flex items-center gap-2 shrink-0">
+                    <button
+                        type="button"
+                        onclick="window.print()"
+                        class="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                        title="Cetak katalog inventaris"
+                    >
+                        <i data-lucide="printer" class="w-4 h-4"></i>
+                        <span>Cetak</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        onclick="openModalTambah()"
+                        class="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-700 hover:to-red-700 text-white rounded-xl text-xs font-bold shadow-md shadow-rose-500/20 transition cursor-pointer"
+                    >
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                        <span>Tambah Aset Baru</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ROW 2: ADVANCED SELECTS -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Kategori Aset</label>
+                    <select name="kategori_id" onchange="document.getElementById('filterFormInv').submit()" class="w-full px-2.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium">
+                        <option value="">Semua Kategori</option>
+                        @foreach($kategoris as $k)
+                            <option value="{{ $k->id }}" {{ request('kategori_id') == $k->id ? 'selected' : '' }}>{{ $k->nama_kategori }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Ruangan / Lokasi</label>
+                    <select name="lokasi_id" onchange="document.getElementById('filterFormInv').submit()" class="w-full px-2.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium">
+                        <option value="">Semua Ruangan</option>
+                        @foreach($lokasis as $l)
+                            <option value="{{ $l->id }}" {{ request('lokasi_id') == $l->id ? 'selected' : '' }}>{{ $l->nama_lokasi }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Kondisi Fisik</label>
+                    <select name="kondisi" onchange="document.getElementById('filterFormInv').submit()" class="w-full px-2.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium">
+                        <option value="">Semua Kondisi</option>
+                        <option value="Baik" {{ request('kondisi') == 'Baik' ? 'selected' : '' }}>Baik</option>
+                        <option value="Rusak Ringan" {{ request('kondisi') == 'Rusak Ringan' ? 'selected' : '' }}>Rusak Ringan</option>
+                        <option value="Rusak Berat" {{ request('kondisi') == 'Rusak Berat' ? 'selected' : '' }}>Rusak Berat</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Status Ketersediaan</label>
+                    <select name="status" onchange="document.getElementById('filterFormInv').submit()" class="w-full px-2.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium">
+                        <option value="">Semua Status</option>
+                        <option value="Tersedia" {{ request('status') == 'Tersedia' ? 'selected' : '' }}>Tersedia</option>
+                        <option value="Dipinjam" {{ request('status') == 'Dipinjam' ? 'selected' : '' }}>Dipinjam</option>
+                        <option value="Dalam Maintenance" {{ request('status') == 'Dalam Maintenance' ? 'selected' : '' }}>Dalam Maintenance</option>
+                        <option value="Habis" {{ request('status') == 'Habis' ? 'selected' : '' }}>Habis</option>
+                    </select>
+                </div>
+            </div>
         </form>
 
-        <button onclick="openModalTambah()" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-rose-500/20 cursor-pointer">
-            <span>+ Tambah Aset Baru</span>
-        </button>
+        <!-- ROW 3: FOOTER INFO & RESET -->
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
+            <span class="text-[11px] font-semibold text-slate-500">
+                Menampilkan <strong class="text-slate-900 dark:text-white font-mono">{{ $items->total() ?? count($items) }}</strong> aset terdaftar
+            </span>
+
+            @if(request('search') || request('kategori_id') || request('lokasi_id') || request('kondisi') || request('status'))
+                <a href="{{ route('inventaris.index') }}" class="flex items-center gap-1 text-[11px] text-rose-600 hover:text-rose-700 font-bold hover:underline">
+                    <i data-lucide="rotate-ccw" class="w-3 h-3"></i>
+                    <span>Reset Semua Filter</span>
+                </a>
+            @endif
+        </div>
     </div>
 
     <!-- TABEL DATA INVENTARIS -->
@@ -82,9 +217,10 @@
                                         class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg font-bold text-[11px] flex items-center gap-1 cursor-pointer transition"
                                         title="Lihat Detail & Riwayat Mutasi Aset"
                                     >
-                                        <span>👁️ Detail</span>
+                                        <i data-lucide="eye" class="w-3.5 h-3.5 text-slate-500"></i>
+                                        <span>Detail</span>
                                         @if($item->mutasis && count($item->mutasis) > 0)
-                                            <span class="px-1.5 py-0.2 rounded-full text-[9px] bg-indigo-100 text-indigo-700 font-mono">{{ count($item->mutasis) }}</span>
+                                            <span class="px-1.5 py-0.2 rounded-full text-[9px] bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 font-mono font-bold">{{ count($item->mutasis) }}</span>
                                         @endif
                                     </button>
 
@@ -95,17 +231,18 @@
                                         class="px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 rounded-lg font-bold text-[11px] flex items-center gap-1 cursor-pointer transition border border-indigo-200 dark:border-indigo-800"
                                         title="Cetak Stiker Label QR (1 Item Saja)"
                                     >
-                                        <span>🏷️ Label QR</span>
+                                        <i data-lucide="qr-code" class="w-3.5 h-3.5 text-indigo-600"></i>
+                                        <span>Label QR</span>
                                     </button>
 
                                     <!-- Tombol Edit Aset -->
                                     <button 
                                         type="button"
                                         onclick="openModalEdit({{ json_encode($item) }})"
-                                        class="p-1.5 text-slate-400 hover:text-amber-600 rounded-lg cursor-pointer"
+                                        class="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/50 rounded-lg transition cursor-pointer"
                                         title="Ubah Data Aset"
                                     >
-                                        ✏️
+                                        <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
                                     </button>
                                 </div>
                             </td>

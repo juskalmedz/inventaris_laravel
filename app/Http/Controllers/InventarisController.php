@@ -52,7 +52,21 @@ class InventarisController extends Controller
         $lokasis = Lokasi::all();
         $kopConfig = KopConfig::first();
 
-        return view('inventaris.index', compact('items', 'kategoris', 'lokasis', 'kopConfig'));
+        // 1:1 Stats Summary matching React App.tsx
+        $totalAset = Inventaris::count();
+        $totalStok = Inventaris::sum('stok');
+        $totalNilai = Inventaris::selectRaw('SUM(stok * harga_perkiraan) as total')->value('total') ?? 0;
+        $stokTersedia = Inventaris::where('status', 'Tersedia')->sum('stok');
+        $stokKritisCount = Inventaris::where('stok', '<=', 1)->count();
+        $stokHabisCount = Inventaris::where('stok', 0)->count();
+        $kondisiBaikCount = Inventaris::where('kondisi', 'Baik')->count();
+        $dalamMaintenanceCount = Inventaris::where('status', 'Dalam Maintenance')->orWhere('status', 'Dalam Perbaikan')->count();
+
+        return view('inventaris.index', compact(
+            'items', 'kategoris', 'lokasis', 'kopConfig',
+            'totalAset', 'totalStok', 'totalNilai', 'stokTersedia',
+            'stokKritisCount', 'stokHabisCount', 'kondisiBaikCount', 'dalamMaintenanceCount'
+        ));
     }
 
     public function show($id)
