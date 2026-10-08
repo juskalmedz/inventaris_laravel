@@ -18,30 +18,58 @@ class MaintenanceController extends Controller
         $query = Maintenance::with('inventaris');
 
         if ($status && $status !== 'all') {
-            $query->where('status', $status);
+            $query->where(function ($q) use ($status) {
+                $q->where('status', $status);
+                if ($status === 'Tidak Dapat Diperbaiki') {
+                    $q->orWhere('status', 'Tidak Bisa Diperbaiki');
+                }
+            });
         }
 
         if ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('nomor_tiket', 'like', "%{$search}%")
-                  ->orWhere('vendor', 'like', "%{$search}%")
-                  ->orWhere('deskripsi_masalah', 'like', "%{$search}%")
-                  ->orWhereHas('inventaris', function ($sub) use ($search) {
-                      $sub->where('nama_barang', 'like', "%{$search}%")
-                          ->orWhere('kode_barang', 'like', "%{$search}%");
-                  });
+            $hasNomorTiket = \Illuminate\Support\Facades\Schema::hasColumn('maintenances', 'nomor_tiket');
+            $hasVendor = \Illuminate\Support\Facades\Schema::hasColumn('maintenances', 'vendor');
+            $hasDeskripsiMasalah = \Illuminate\Support\Facades\Schema::hasColumn('maintenances', 'deskripsi_masalah');
+
+            $query->where(function ($q) use ($search, $hasNomorTiket, $hasVendor, $hasDeskripsiMasalah) {
+                if ($hasNomorTiket) {
+                    $q->where('nomor_tiket', 'like', "%{$search}%");
+                }
+                $q->orWhere('tiket', 'like', "%{$search}%");
+
+                if ($hasVendor) {
+                    $q->orWhere('vendor', 'like', "%{$search}%");
+                }
+                $q->orWhere('teknisi', 'like', "%{$search}%");
+
+                if ($hasDeskripsiMasalah) {
+                    $q->orWhere('deskripsi_masalah', 'like', "%{$search}%");
+                }
+                $q->orWhere('deskripsi', 'like', "%{$search}%");
+
+                $q->orWhereHas('inventaris', function ($sub) use ($search) {
+                    $sub->where('nama_barang', 'like', "%{$search}%")
+                        ->orWhere('kode_barang', 'like', "%{$search}%");
+                });
             });
         }
 
         $maintenances = $query->orderBy('created_at', 'desc')->paginate(15);
         $inventarisList = Inventaris::where('status', '!=', 'Dihapuskan')->get();
 
+        $totalBiaya = 0;
+        if (\Illuminate\Support\Facades\Schema::hasColumn('maintenances', 'biaya_aktual')) {
+            $totalBiaya = Maintenance::where('status', 'Selesai')->sum('biaya_aktual');
+        } elseif (\Illuminate\Support\Facades\Schema::hasColumn('maintenances', 'biaya')) {
+            $totalBiaya = Maintenance::where('status', 'Selesai')->sum('biaya');
+        }
+
         $stats = [
             'total' => Maintenance::count(),
             'dalam_perbaikan' => Maintenance::where('status', 'Dalam Perbaikan')->count(),
             'selesai' => Maintenance::where('status', 'Selesai')->count(),
-            'tidak_dapat_diperbaiki' => Maintenance::where('status', 'Tidak Dapat Diperbaiki')->count(),
-            'total_biaya' => Maintenance::where('status', 'Selesai')->sum('biaya_aktual'),
+            'tidak_dapat_diperbaiki' => Maintenance::where('status', 'Tidak Dapat Diperbaiki')->orWhere('status', 'Tidak Bisa Diperbaiki')->count(),
+            'total_biaya' => $totalBiaya ?? 0,
         ];
 
         return view('maintenance.index', compact('maintenances', 'inventarisList', 'stats'));
@@ -63,12 +91,18 @@ class MaintenanceController extends Controller
 
         $maintenance = Maintenance::create([
             'nomor_tiket' => $nomorTiket,
+            'tiket' => $nomorTiket,
             'inventaris_id' => $validated['inventaris_id'],
             'jenis_maintenance' => $validated['jenis_maintenance'],
             'deskripsi_masalah' => $validated['deskripsi_masalah'],
+            'deskripsi' => $validated['deskripsi_masalah'],
             'estimasi_biaya' => $validated['estimasi_biaya'],
+            'biaya' => $validated['estimasi_biaya'],
+            'biaya_aktual' => 0,
             'vendor' => $validated['vendor'],
+            'teknisi' => $validated['vendor'],
             'tanggal_mulai' => $validated['tanggal_mulai'],
+            'tanggal_lapor' => $validated['tanggal_mulai'],
             'status' => 'Dalam Perbaikan',
         ]);
 
@@ -97,12 +131,27 @@ class MaintenanceController extends Controller
             'tanggal_selesai' => 'required|date',
         ]);
 
-        $maintenance->update([
+        $biayaFinal = $validated['biaya_aktual'] ?? $maintenance->estimasi_biaya ?? $maintenance->biaya ?? 0;
+
+        $updateData = [
             'status' => $validated['status'],
-            'biaya_aktual' => $validated['biaya_aktual'] ?? $maintenance->estimasi_biaya,
-            'tindakan_perbaikan' => $validated['tindakan_perbaikan'],
             'tanggal_selesai' => $validated['tanggal_selesai'],
-        ]);
+        ];
+
+        if (\Illuminate\Support\Facades\Schema::hasColumn('maintenances', 'biaya_aktual')) {
+            $updateData['biaya_aktual'] = $biayaFinal;
+        }
+        if (\Illuminate\Support\Facades\Schema::hasColumn('maintenances', 'biaya')) {
+            $updateData['biaya'] = $biayaFinal;
+        }
+        if (\Illuminate\Support\Facades\Schema::hasColumn('maintenances', 'tindakan_perbaikan')) {
+            $updateData['tindakan_perbaikan'] = $validated['tindakan_perbaikan'];
+        }
+        if (\Illuminate\Support\Facades\Schema::hasColumn('maintenances', 'tindakan')) {
+            $updateData['tindakan'] = $validated['tindakan_perbaikan'];
+        }
+
+        $maintenance->update($updateData);
 
         $item = Inventaris::findOrFail($maintenance->inventaris_id);
         if ($validated['status'] === 'Selesai') {

@@ -114,8 +114,44 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // 11. Maintenance
-        Maintenance::create(['id' => 1, 'tiket' => 'MT-001', 'inventaris_id' => 5, 'tanggal_lapor' => '2026-03-01', 'kondisi' => 'Rusak Ringan', 'deskripsi' => 'Head print bergaris perlu servis berkala', 'teknisi' => 'Epson Service Center', 'biaya' => 250000, 'status' => 'Dalam Perbaikan']);
-        Maintenance::create(['id' => 2, 'tiket' => 'MT-002', 'inventaris_id' => 6, 'tanggal_lapor' => '2026-03-03', 'kondisi' => 'Rusak Berat', 'deskripsi' => 'Kaki meja patah sedang dalam pengafkiran', 'teknisi' => 'Bengkel Kayu Abadi', 'biaya' => 150000, 'status' => 'Tidak Bisa Diperbaiki']);
+        Maintenance::create([
+            'id' => 1,
+            'nomor_tiket' => 'MTN-202603-001',
+            'tiket' => 'MTN-202603-001',
+            'inventaris_id' => 5,
+            'jenis_maintenance' => 'Perbaikan',
+            'tanggal_mulai' => '2026-03-01',
+            'tanggal_lapor' => '2026-03-01',
+            'kondisi' => 'Rusak Ringan',
+            'deskripsi' => 'Head print bergaris perlu servis berkala',
+            'deskripsi_masalah' => 'Head print bergaris perlu servis berkala',
+            'teknisi' => 'Epson Service Center',
+            'vendor' => 'Epson Service Center',
+            'estimasi_biaya' => 250000,
+            'biaya_aktual' => 0,
+            'biaya' => 250000,
+            'status' => 'Dalam Perbaikan'
+        ]);
+        Maintenance::create([
+            'id' => 2,
+            'nomor_tiket' => 'MTN-202603-002',
+            'tiket' => 'MTN-202603-002',
+            'inventaris_id' => 6,
+            'jenis_maintenance' => 'Insidental',
+            'tanggal_mulai' => '2026-03-03',
+            'tanggal_lapor' => '2026-03-03',
+            'tanggal_selesai' => '2026-03-05',
+            'kondisi' => 'Rusak Berat',
+            'deskripsi' => 'Kaki meja patah sedang dalam pengafkiran',
+            'deskripsi_masalah' => 'Kaki meja patah sedang dalam pengafkiran',
+            'teknisi' => 'Bengkel Kayu Abadi',
+            'vendor' => 'Bengkel Kayu Abadi',
+            'estimasi_biaya' => 150000,
+            'biaya_aktual' => 150000,
+            'biaya' => 150000,
+            'tindakan_perbaikan' => 'Pemeriksaan struktur kayu, diputuskan diafkir',
+            'status' => 'Tidak Dapat Diperbaiki'
+        ]);
 
         // 12. Kop Config
         KopConfig::create([

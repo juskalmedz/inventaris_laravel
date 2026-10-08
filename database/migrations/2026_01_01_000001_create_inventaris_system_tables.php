@@ -70,6 +70,7 @@ return new class extends Migration
         Schema::create('inventaris', function (Blueprint $table) {
             $table->id();
             $table->string('kode_barang', 50)->unique();
+            $table->string('barcode', 100)->nullable()->index();
             $table->string('nama_barang');
             $table->foreignId('kategori_id')->constrained('kategoris')->onDelete('restrict');
             $table->foreignId('lokasi_id')->constrained('lokasis')->onDelete('restrict');
@@ -151,15 +152,23 @@ return new class extends Migration
         // 11. Maintenance / Tiket Servis
         Schema::create('maintenances', function (Blueprint $table) {
             $table->id();
-            $table->string('tiket', 50)->unique();
+            $table->string('nomor_tiket', 50)->nullable()->unique();
+            $table->string('tiket', 50)->nullable();
             $table->foreignId('inventaris_id')->constrained('inventaris')->onDelete('cascade');
-            $table->date('tanggal_lapor');
+            $table->enum('jenis_maintenance', ['Rutin', 'Perbaikan', 'Insidental'])->default('Perbaikan');
+            $table->date('tanggal_mulai')->nullable();
+            $table->date('tanggal_lapor')->nullable();
             $table->date('tanggal_selesai')->nullable();
-            $table->enum('kondisi', ['Rusak Ringan', 'Rusak Berat']);
-            $table->text('deskripsi');
+            $table->enum('kondisi', ['Baik', 'Rusak Ringan', 'Rusak Berat'])->default('Rusak Ringan');
+            $table->text('deskripsi_masalah')->nullable();
+            $table->text('deskripsi')->nullable();
+            $table->string('vendor')->nullable();
             $table->string('teknisi')->nullable();
+            $table->decimal('estimasi_biaya', 15, 2)->default(0);
+            $table->decimal('biaya_aktual', 15, 2)->default(0);
             $table->decimal('biaya', 15, 2)->default(0);
-            $table->enum('status', ['Dalam Perbaikan', 'Menunggu Suku Cadang', 'Selesai', 'Tidak Bisa Diperbaiki'])->default('Dalam Perbaikan');
+            $table->text('tindakan_perbaikan')->nullable();
+            $table->enum('status', ['Dalam Perbaikan', 'Menunggu Suku Cadang', 'Selesai', 'Tidak Dapat Diperbaiki', 'Tidak Bisa Diperbaiki'])->default('Dalam Perbaikan');
             $table->timestamps();
         });
 

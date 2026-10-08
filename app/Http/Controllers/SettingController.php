@@ -116,4 +116,113 @@ class SettingController extends Controller
 
         return back()->with('success', 'Data sistem berhasil direset ke data default awal.');
     }
+
+    public function storeUser(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'username' => 'required|string|max:50|unique:users,username',
+            'role' => 'required|in:Admin,Supervisor,Staff,Auditor',
+            'password' => 'required|string|min:4',
+            'status' => 'required|in:Aktif,Nonaktif',
+        ]);
+
+        $kodeUser = 'USR-' . strtoupper($validated['role']) . '-' . sprintf('%03d', User::count() + 1);
+
+        $newUser = User::create([
+            'kode_user' => $kodeUser,
+            'name' => $validated['name'],
+            'username' => strtolower(trim($validated['username'])),
+            'password' => Hash::make($validated['password']),
+            'role' => $validated['role'],
+            'status' => $validated['status'],
+            'color_scheme' => 'rose',
+        ]);
+
+        AuditLog::create([
+            'kode_log' => 'LOG-' . time(),
+            'user_name' => Auth::user()->name ?? 'System',
+            'user_role' => Auth::user()->role ?? 'Admin',
+            'action' => 'CREATE',
+            'module' => 'RBAC',
+            'description' => "Membuat akun pengguna baru: {$newUser->name} (@{$newUser->username}) peran {$newUser->role}.",
+        ]);
+
+        return back()->with('success', "Akun pengguna {$newUser->name} berhasil ditambahkan!");
+    }
+
+    public function updateUser(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'username' => 'required|string|max:50|unique:users,username,' . $id,
+            'role' => 'required|in:Admin,Supervisor,Staff,Auditor',
+            'status' => 'required|in:Aktif,Nonaktif',
+        ]);
+
+        $user->update([
+            'name' => $validated['name'],
+            'username' => strtolower(trim($validated['username'])),
+            'role' => $validated['role'],
+            'status' => $validated['status'],
+        ]);
+
+        AuditLog::create([
+            'kode_log' => 'LOG-' . time(),
+            'user_name' => Auth::user()->name ?? 'System',
+            'user_role' => Auth::user()->role ?? 'Admin',
+            'action' => 'UPDATE',
+            'module' => 'RBAC',
+            'description' => "Memperbarui data akun pengguna: {$user->name} (@{$user->username}).",
+        ]);
+
+        return back()->with('success', "Data akun pengguna {$user->name} berhasil diperbarui!");
+    }
+
+    public function resetUserPassword(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+        $validated = $request->validate([
+            'password' => 'required|string|min:4',
+        ]);
+
+        $user->update([
+            'password' => Hash::make($validated['password']),
+        ]);
+
+        AuditLog::create([
+            'kode_log' => 'LOG-' . time(),
+            'user_name' => Auth::user()->name ?? 'System',
+            'user_role' => Auth::user()->role ?? 'Admin',
+            'action' => 'UPDATE',
+            'module' => 'RBAC',
+            'description' => "Mereset kata sandi akun {$user->name} (@{$user->username}).",
+        ]);
+
+        return back()->with('success', "Kata sandi untuk pengguna {$user->name} berhasil direset!");
+    }
+
+    public function deleteUser($id)
+    {
+        $user = User::findOrFail($id);
+        if ($user->id === Auth::id()) {
+            return back()->with('error', 'Anda tidak dapat menghapus akun Anda sendiri yang sedang aktif.');
+        }
+
+        $username = $user->username;
+        $name = $user->name;
+        $user->delete();
+
+        AuditLog::create([
+            'kode_log' => 'LOG-' . time(),
+            'user_name' => Auth::user()->name ?? 'System',
+            'user_role' => Auth::user()->role ?? 'Admin',
+            'action' => 'DELETE',
+            'module' => 'RBAC',
+            'description' => "Menghapus akun pengguna {$name} (@{$username}).",
+        ]);
+
+        return back()->with('success', "Akun pengguna {$name} berhasil dihapus.");
+    }
 }

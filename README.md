@@ -63,36 +63,55 @@ docker push username/inventaris-kantor:latest
 
 ---
 
-### Cara 2: Instalasi Manual dengan Composer & PHP Lokal
+### Cara 2: Instalasi Manual dengan Composer, Node.js & PHP Lokal
 
 #### 1. Kebutuhan Sistem
 - PHP >= 8.2 / 8.3 / 8.4
 - Composer >= 2.6
+- Node.js >= 18.0 (untuk kompilasi Tailwind CSS via Vite)
 - MySQL >= 8.0 atau SQLite 3
 
-#### 2. Langkah Setup Proyek
+#### 2. Langkah Setup Proyek (3 Menit Siap Pakai)
 ```bash
 # 1. Masuk ke direktori laravel
 cd laravel
 
-# 2. Install dependensi composer (sudah diperbaiki untuk PHP 8.2-8.4 & Laravel 11/12/13)
+# 2. Install dependensi composer backend
 composer install
 
-# 3. Salin file environment & generate app key (jika belum ada)
+# 3. Install dan build Tailwind CSS frontend (Vite & PostCSS)
+npm install
+npm run build      # atau jalankan 'npm run dev' di tab terminal terpisah untuk hot-reload
+
+# 4. Salin file environment & generate app key
 cp .env.example .env
 php artisan key:generate
 
-# 4. Konfigurasi koneksi database di file .env
+# 5. Konfigurasi koneksi database di file .env (opsional jika menggunakan MySQL lokal)
 # DB_CONNECTION=mysql
 # DB_DATABASE=inventaris_kantor
 # DB_USERNAME=root
 # DB_PASSWORD=
 
-# 5. Jalankan migrasi dan seeder data awal 1:1
+# 6. Jalankan migrasi tabel dan seeder data awal 1:1
 php artisan migrate:fresh --seed
+# Atau jika database sudah berjalan dan ingin memperbarui struktur tabel:
+php artisan migrate
 
-# 6. Jalankan web server lokal
+# 7. Jalankan web server Laravel lokal
 php artisan serve
+```
+
+> **💡 Catatan Fallback Styling Cerdas**: Master layout Blade telah dikonfigurasi dengan mode hibrida `@vite(['resources/css/app.css', 'resources/js/app.js'])` dan CDN fallback otomatis. Jika Anda hanya menjalankan `php artisan serve` tanpa menjalankan `npm run dev`, tampilan tetap langsung muncul dengan Tailwind CSS lengkap tanpa rusak!
+
+### 🛠️ Solusi Error: `Unknown column 'biaya_aktual' in 'field list'`
+Jika muncul pesan error `Unknown column 'biaya_aktual'`, ini terjadi karena tabel `maintenances` dibuat dari skema migrasi sebelumnya. Cukup jalankan perintah:
+```bash
+php artisan migrate
+```
+Migrasi otomatis `2026_01_01_000003_add_biaya_aktual_and_details_to_maintenances_table.php` akan langsung menambahkan kolom `biaya_aktual`, `estimasi_biaya`, `nomor_tiket`, `vendor`, dll. secara aman tanpa menghilangkan data yang ada. Atau jika ingin reset total:
+```bash
+php artisan migrate:fresh --seed
 ```
 
 Aplikasi dapat langsung diakses di browser: **`http://localhost:8000`**

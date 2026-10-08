@@ -13,6 +13,7 @@ class Inventaris extends Model
 
     protected $fillable = [
         'kode_barang',
+        'barcode',
         'nama_barang',
         'kategori_id',
         'lokasi_id',
@@ -24,6 +25,14 @@ class Inventaris extends Model
         'deskripsi',
         'qr_code_data',
     ];
+
+    public function getBarcodeAttribute($value)
+    {
+        if (!empty($value)) {
+            return $value;
+        }
+        return '899' . str_pad($this->id, 9, '0', STR_PAD_LEFT);
+    }
 
     protected $casts = [
         'stok' => 'integer',

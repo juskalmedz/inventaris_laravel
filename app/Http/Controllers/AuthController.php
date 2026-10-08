@@ -20,6 +20,47 @@ class AuthController extends Controller
         return view('auth.login', compact('demoUsers'));
     }
 
+    public function quickLogin($role, Request $request)
+    {
+        $roleClean = ucfirst(strtolower($role));
+        if ($roleClean === 'Staff logistik') $roleClean = 'Staff';
+
+        $user = User::where('role', $roleClean)->where('status', 'Aktif')->first();
+        if (!$user) {
+            $user = User::whereRaw('LOWER(role) = ?', [strtolower($role)])->first();
+        }
+
+        if (!$user) {
+            // Auto create demo user if not yet in database
+            $user = User::firstOrCreate(
+                ['username' => strtolower($roleClean)],
+                [
+                    'kode_user' => 'USR-' . strtoupper($roleClean),
+                    'name' => "{$roleClean} Demo",
+                    'password' => Hash::make('password'),
+                    'role' => in_array($roleClean, ['Admin', 'Supervisor', 'Staff', 'Auditor']) ? $roleClean : 'Staff',
+                    'status' => 'Aktif',
+                    'color_scheme' => 'rose'
+                ]
+            );
+        }
+
+        Auth::login($user);
+        $request->session()->regenerate();
+
+        AuditLog::create([
+            'kode_log' => 'LOG-' . time(),
+            'user_name' => $user->name,
+            'user_role' => $user->role,
+            'action' => 'STATUS_CHANGE',
+            'module' => 'Autentikasi',
+            'description' => "Pengguna masuk cepat sebagai {$user->role} ({$user->name}).",
+            'ip' => $request->ip(),
+        ]);
+
+        return redirect()->route('dashboard')->with('success', "Berhasil masuk sebagai {$user->role} ({$user->name})!");
+    }
+
     public function login(Request $request)
     {
         $validated = $request->validate([

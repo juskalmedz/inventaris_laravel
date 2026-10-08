@@ -8,6 +8,12 @@ use App\Models\Kategori;
 use App\Models\Lokasi;
 use App\Models\Departemen;
 use App\Models\KopConfig;
+use App\Models\BarangMasuk;
+use App\Models\BarangKeluar;
+use App\Models\Peminjaman;
+use App\Models\Mutasi;
+use App\Models\Maintenance;
+use App\Models\Karyawan;
 
 class LaporanController extends Controller
 {
@@ -17,6 +23,7 @@ class LaporanController extends Controller
         $lokasiId = $request->query('lokasi_id');
         $kondisi = $request->query('kondisi');
         $status = $request->query('status');
+        $preset = $request->query('preset', 'rekap');
 
         $query = Inventaris::with(['kategori', 'lokasi']);
 
@@ -36,15 +43,24 @@ class LaporanController extends Controller
         $items = $query->orderBy('nama_barang', 'asc')->get();
         $kategoriList = Kategori::all();
         $lokasiList = Lokasi::all();
+        $karyawanList = Karyawan::all();
+
+        $barangMasuk = BarangMasuk::with('inventaris')->latest()->take(100)->get();
+        $barangKeluar = BarangKeluar::with(['inventaris', 'karyawan'])->latest()->take(100)->get();
+        $peminjaman = Peminjaman::with(['inventaris', 'karyawan'])->latest()->take(100)->get();
+        $maintenance = Maintenance::with('inventaris')->latest()->take(100)->get();
+        $mutasi = Mutasi::with(['inventaris', 'lokasiAwal', 'lokasiBaru', 'pemohon'])->latest()->take(100)->get();
+
         $kopConfig = KopConfig::first() ?? new KopConfig([
-            'nama_instansi' => 'PT. NUSANTARA SINERGI TEKNOLOGI',
-            'alamat' => 'Jl. Jenderal Sudirman Kav. 52-53, SCBD Lot 8, Jakarta Selatan 12190',
-            'telepon' => '(021) 555-8921 / 0812-3456-7890',
-            'email' => 'inventaris@perusahaan.co.id',
-            'website' => 'https://perusahaan.co.id',
-            'kota' => 'Jakarta',
-            'pic_penanggung_jawab' => 'Budi Santoso, S.Kom., M.T.',
-            'jabatan_pic' => 'Head of IT & General Affairs Infrastructure'
+            'org_name' => 'KEMENTERIAN KOMUNIKASI DAN INFORMATIKA RI',
+            'div_name' => 'DIREKTORAT JENDERAL SUMBER DAYA & PERANGKAT POS INFORMATIKA',
+            'nomor_surat' => 'BA-INV/2026/X/001',
+            'approver_title' => 'Kepala Bagian Umum & Perlengkapan',
+            'approver_name' => 'Drs. Bambang Hariyanto, M.M.',
+            'approver_nip' => 'NIP. 19750812 199903 1 002',
+            'maker_title' => 'Petugas Pengelola Inventaris & Logistik',
+            'maker_name' => 'Bambang Pratama, S.Kom.',
+            'maker_nip' => 'NIP. 19880422 201101 1 005',
         ]);
 
         $totalAset = $items->count();
@@ -52,8 +68,13 @@ class LaporanController extends Controller
         $totalNilai = $items->sum(function($item) {
             return $item->stok * $item->harga_perkiraan;
         });
+        $kritisCount = $items->where('stok', '<=', 1)->count();
 
-        return view('laporan.index', compact('items', 'kategoriList', 'lokasiList', 'kopConfig', 'totalAset', 'totalFisik', 'totalNilai'));
+        return view('laporan.index', compact(
+            'items', 'kategoriList', 'lokasiList', 'karyawanList',
+            'barangMasuk', 'barangKeluar', 'peminjaman', 'maintenance', 'mutasi',
+            'kopConfig', 'totalAset', 'totalFisik', 'totalNilai', 'kritisCount', 'preset'
+        ));
     }
 
     public function cetak(Request $request)
@@ -90,8 +111,8 @@ class LaporanController extends Controller
                 fputcsv($file, [
                     $item->kode_barang,
                     $item->nama_barang,
-                    $item->kategori->nama ?? '-',
-                    $item->lokasi->nama ?? '-',
+                    $item->kategori->nama_kategori ?? $item->kategori->nama ?? '-',
+                    $item->lokasi->nama_lokasi ?? $item->lokasi->nama ?? '-',
                     $item->stok,
                     $item->satuan,
                     $item->kondisi,

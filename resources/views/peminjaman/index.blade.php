@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Peminjaman & Pengembalian Aset Tetap - Inventaris Kantor')
+@section('title', 'Peminjaman & Pengembalian Aset - Inventaris Kantor')
+@section('page_title', 'Peminjaman & Sirkulasi Aset')
 
 @section('content')
 <div class="space-y-6">
@@ -9,18 +10,18 @@
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
             <div class="flex items-center gap-2">
-                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400">
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300">
                     Sirkulasi & Logistik
                 </span>
                 <span class="text-xs text-slate-400 font-mono">1:1 Sinkronisasi Peminjaman & WhatsApp</span>
             </div>
             <h1 class="text-2xl font-black text-slate-900 dark:text-white tracking-tight mt-1">Peminjaman & Pengembalian Aset</h1>
-            <p class="text-sm text-slate-500 dark:text-slate-400">Pinjam-pakai aset operasional kantor (laptop, kamera, kendaraan, proyektor) dengan audit kondisi fisik dan notifikasi pengingat.</p>
+            <p class="text-sm text-slate-500 dark:text-slate-400">Pinjam-pakai aset operasional kantor (laptop, proyektor, kamera, kendaraan) dengan monitoring jatuh tempo dan pengembalian stok.</p>
         </div>
         <div class="flex items-center gap-3">
             <button
                 type="button"
-                onclick="document.getElementById('modalTambahPinjam').classList.remove('hidden')"
+                onclick="openModalTambahPinjam()"
                 class="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-bold text-sm shadow-md shadow-blue-600/20 active:scale-95 transition cursor-pointer"
             >
                 <i data-lucide="handshake" class="w-4 h-4"></i>
@@ -29,30 +30,15 @@
         </div>
     </div>
 
-    <!-- Alert Notifications -->
-    @if(session('success'))
-    <div class="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 text-sm flex items-center gap-3">
-        <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-600 shrink-0"></i>
-        <span>{{ session('success') }}</span>
-    </div>
-    @endif
-
-    @if(session('error'))
-    <div class="p-4 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-200 text-sm flex items-center gap-3">
-        <i data-lucide="alert-circle" class="w-5 h-5 text-rose-600 shrink-0"></i>
-        <span>{{ session('error') }}</span>
-    </div>
-    @endif
-
     <!-- KPI / Ringkasan Peminjaman -->
-    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs flex items-center justify-between">
             <div>
                 <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Tiket Pinjam</p>
                 <h4 class="text-2xl font-black text-slate-900 dark:text-white mt-0.5">{{ $loans->total() ?? count($loans) }}</h4>
                 <span class="text-xs text-slate-500">Semua Catatan</span>
             </div>
-            <div class="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 flex items-center justify-center">
+            <div class="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center">
                 <i data-lucide="calendar" class="w-6 h-6"></i>
             </div>
         </div>
@@ -61,11 +47,11 @@
             <div>
                 <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Sedang Dipinjam</p>
                 <h4 class="text-2xl font-black text-blue-600 dark:text-blue-400 mt-0.5">
-                    {{ $loans->where('status', 'Dipinjam')->count() }}
+                    {{ $loans->where('status', 'Dipinjam')->count() }} Unit
                 </h4>
-                <span class="text-xs text-blue-600 font-semibold">Unit di Lapangan</span>
+                <span class="text-xs text-blue-600 font-semibold">Aktif di Lapangan</span>
             </div>
-            <div class="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 flex items-center justify-center">
+            <div class="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 flex items-center justify-center">
                 <i data-lucide="clock" class="w-6 h-6"></i>
             </div>
         </div>
@@ -74,22 +60,22 @@
             <div>
                 <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Sudah Kembali</p>
                 <h4 class="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
-                    {{ $loans->where('status', 'Dikembalikan')->count() }}
+                    {{ $loans->where('status', 'Dikembalikan')->count() }} Unit
                 </h4>
                 <span class="text-xs text-emerald-600 font-semibold">Stok Dipulihkan</span>
             </div>
             <div class="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 flex items-center justify-center">
-                <i data-lucide="check-circle" class="w-6 h-6"></i>
+                <i data-lucide="check-circle-2" class="w-6 h-6"></i>
             </div>
         </div>
 
         <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs flex items-center justify-between">
             <div>
-                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Menunggu Approval</p>
+                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Menunggu Persetujuan</p>
                 <h4 class="text-2xl font-black text-amber-600 dark:text-amber-400 mt-0.5">
                     {{ $loans->where('status', 'Menunggu Approval')->count() }}
                 </h4>
-                <span class="text-xs text-amber-600 font-semibold">Perlu Tindakan</span>
+                <span class="text-xs text-amber-600 font-semibold">Perlu Approval</span>
             </div>
             <div class="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 flex items-center justify-center">
                 <i data-lucide="alert-circle" class="w-6 h-6"></i>
@@ -98,124 +84,129 @@
     </div>
 
     <!-- Tabel Data Peminjaman -->
-    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-2xs">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs">
         <div class="overflow-x-auto">
-            <table class="w-full text-left text-sm text-slate-600 dark:text-slate-300">
-                <thead class="bg-slate-50 dark:bg-slate-800/80 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
+            <table class="w-full text-left text-xs text-slate-600 dark:text-slate-300">
+                <thead class="bg-slate-50 dark:bg-slate-800/80 text-[11px] font-extrabold uppercase text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
                     <tr>
-                        <th class="px-5 py-3.5">No. Peminjaman</th>
+                        <th class="px-5 py-3.5">No. Pinjam & Tgl</th>
                         <th class="px-5 py-3.5">Aset / Barang</th>
-                        <th class="px-5 py-3.5">Peminjam (Pegawai)</th>
-                        <th class="px-5 py-3.5">Jadwal Pinjam & Jatuh Tempo</th>
-                        <th class="px-5 py-3.5 text-center">Status</th>
-                        <th class="px-5 py-3.5 text-right">Aksi</th>
+                        <th class="px-5 py-3.5">Peminjam / PIC</th>
+                        <th class="px-5 py-3.5">Periode & Jatuh Tempo</th>
+                        <th class="px-5 py-3.5">Status Pinjaman</th>
+                        <th class="px-5 py-3.5 text-right">Aksi & Sirkulasi</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-200 dark:divide-slate-800 font-medium">
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
                     @forelse($loans as $item)
                     @php
-                        $targetDate = $item->tanggal_kembali ?? $item->rencana_kembali;
-                        $isOverdue = $item->status === 'Dipinjam' && $targetDate && \Carbon\Carbon::parse($targetDate)->isPast();
+                        $isOverdue = false;
+                        if ($item->status === 'Dipinjam' && $item->tanggal_kembali) {
+                            $isOverdue = \Carbon\Carbon::parse($item->tanggal_kembali)->isPast();
+                        }
+                        $cleanPhone = preg_replace('/[^0-9]/', '', $item->karyawan->no_hp ?? '');
+                        if (str_starts_with($cleanPhone, '0')) {
+                            $cleanPhone = '62' . substr($cleanPhone, 1);
+                        }
                     @endphp
-                    <tr class="hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition">
+                    <tr class="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition">
                         <td class="px-5 py-4">
-                            <span class="font-mono text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-800">
+                            <span class="font-mono text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-900/60">
                                 {{ $item->nomor_pinjam }}
                             </span>
-                        </td>
-                        <td class="px-5 py-4">
-                            <div class="font-bold text-slate-900 dark:text-white">
-                                {{ $item->inventaris->nama_barang ?? 'Aset Tidak Ditemukan' }}
-                            </div>
-                            <div class="text-xs font-mono text-slate-400">
-                                Kode: {{ $item->inventaris->kode_barang ?? '-' }} &bull; Qty: {{ $item->jumlah }} Unit
+                            <div class="text-[11px] text-slate-400 mt-1 font-semibold">
+                                Tgl: {{ $item->tanggal_pinjam }}
                             </div>
                         </td>
                         <td class="px-5 py-4">
-                            <div class="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                                <i data-lucide="user" class="w-3.5 h-3.5 text-slate-400"></i>
-                                {{ $item->karyawan->nama ?? 'Pegawai' }}
+                            <div class="font-extrabold text-slate-900 dark:text-white">{{ $item->inventaris->nama_barang ?? '-' }}</div>
+                            <div class="flex items-center gap-2 mt-0.5">
+                                <span class="text-slate-400 font-mono text-[11px]">{{ $item->inventaris->kode_barang ?? '-' }}</span>
+                                <span class="font-bold text-slate-700 dark:text-slate-300 font-mono">({{ $item->jumlah }} Unit)</span>
                             </div>
-                            <div class="text-[11px] text-slate-400">
-                                {{ $item->karyawan->departemen->nama ?? 'Umum' }}
-                            </div>
-                            @if(optional($item->karyawan)->no_telepon)
-                            <a
-                                href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $item->karyawan->no_telepon) }}?text=Halo%20{{ urlencode($item->karyawan->nama) }},%20pengingat%20peminjaman%20aset%20{{ urlencode($item->inventaris->nama_barang ?? '') }}%20(No:%20{{ $item->nomor_pinjam }})"
-                                target="_blank"
-                                class="inline-flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold hover:underline mt-0.5"
-                            >
-                                <i data-lucide="message-square" class="w-3 h-3"></i> WhatsApp Reminder
-                            </a>
+                        </td>
+                        <td class="px-5 py-4">
+                            <div class="font-bold text-slate-800 dark:text-slate-200">{{ $item->karyawan->nama ?? '-' }}</div>
+                            <div class="text-[11px] text-slate-400">{{ $item->karyawan->departemen ?? '-' }}</div>
+                            @if($cleanPhone)
+                                <a
+                                    href="https://wa.me/{{ $cleanPhone }}?text=Halo%20{{ urlencode($item->karyawan->nama ?? '') }}%2C%20mengingatkan%20peminjaman%20aset%20{{ urlencode($item->inventaris->nama_barang ?? '') }}%20(No%3A%20{{ $item->nomor_pinjam }})%20jatuh%20tempo%20pada%20{{ $item->tanggal_kembali }}."
+                                    target="_blank"
+                                    class="inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 hover:underline mt-1"
+                                    title="Kirim pengingat WhatsApp"
+                                >
+                                    <i data-lucide="message-square" class="w-3 h-3"></i>
+                                    <span>Ingatkan WA</span>
+                                </a>
                             @endif
                         </td>
-                        <td class="px-5 py-4 text-xs whitespace-nowrap">
-                            <div>Pinjam: <strong class="text-slate-800 dark:text-slate-200">{{ \Carbon\Carbon::parse($item->tanggal_pinjam)->format('d M Y') }}</strong></div>
-                            @if($targetDate)
-                            <div class="{{ $isOverdue ? 'text-rose-600 font-bold dark:text-rose-400' : 'text-slate-500' }}">
-                                Tempo: {{ \Carbon\Carbon::parse($targetDate)->format('d M Y') }}
+                        <td class="px-5 py-4 text-[11px]">
+                            <div class="text-slate-500 dark:text-slate-400">Pinjam: {{ $item->tanggal_pinjam }}</div>
+                            <div class="mt-0.5 font-bold {{ $isOverdue ? 'text-rose-600 dark:text-rose-400' : 'text-slate-800 dark:text-slate-200' }}">
+                                Tempo: {{ $item->tanggal_kembali }}
                                 @if($isOverdue)
-                                <span class="text-[10px] uppercase font-bold text-rose-500 bg-rose-50 dark:bg-rose-950/60 px-1.5 py-0.2 rounded ml-1">Terlambat</span>
+                                    <span class="inline-block px-1.5 py-0.2 rounded bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 text-[9px] font-black uppercase ml-1 animate-pulse">Overdue</span>
                                 @endif
                             </div>
-                            @endif
                         </td>
-                        <td class="px-5 py-4 text-center">
+                        <td class="px-5 py-4">
                             @if($item->status === 'Dipinjam')
-                                <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-100 text-blue-800 dark:bg-blue-950/80 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
                                     Dipinjam
                                 </span>
                             @elseif($item->status === 'Dikembalikan')
-                                <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                    <i data-lucide="check" class="w-3 h-3"></i>
                                     Dikembalikan
                                 </span>
-                            @elseif($item->status === 'Menunggu Approval')
-                                <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
-                                    Menunggu Approval
-                                </span>
+                                @if($item->kondisi_sesudah)
+                                    <div class="text-[10px] text-slate-400 mt-0.5">Kondisi: {{ $item->kondisi_sesudah }}</div>
+                                @endif
                             @else
-                                <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                                    {{ $item->status }}
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                    Menunggu Approval
                                 </span>
                             @endif
                         </td>
                         <td class="px-5 py-4 text-right">
                             <div class="flex items-center justify-end gap-1.5">
                                 @if($item->status === 'Menunggu Approval')
-                                <form action="{{ route('peminjaman.approve', $item->id) }}" method="POST" class="inline">
-                                    @csrf
-                                    <button type="submit" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition shadow-xs cursor-pointer">
-                                        Setujui
-                                    </button>
-                                </form>
-                                <form action="{{ route('peminjaman.reject', $item->id) }}" method="POST" class="inline">
-                                    @csrf
-                                    <button type="submit" class="px-2.5 py-1.5 bg-slate-200 hover:bg-rose-100 hover:text-rose-600 text-slate-700 rounded-lg text-xs font-bold transition cursor-pointer">
-                                        Tolak
-                                    </button>
-                                </form>
+                                    <form method="POST" action="{{ route('peminjaman.approve', $item->id) }}" class="inline">
+                                        @csrf
+                                        <button
+                                            type="submit"
+                                            onclick="return confirm('Setujui peminjaman ini? Stok aset di katalog akan otomatis dikurangi.')"
+                                            class="px-2.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] shadow-xs transition cursor-pointer flex items-center gap-1"
+                                            title="Setujui Peminjaman"
+                                        >
+                                            <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                                            <span>Setujui</span>
+                                        </button>
+                                    </form>
                                 @elseif($item->status === 'Dipinjam')
-                                <button
-                                    type="button"
-                                    onclick="openReturnModal('{{ $item->id }}', '{{ $item->nomor_pinjam }}', '{{ addslashes($item->inventaris->nama_barang ?? '') }}')"
-                                    class="px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-lg text-xs font-bold transition shadow-xs cursor-pointer"
-                                >
-                                    Proses Pengembalian
-                                </button>
+                                    <button
+                                        type="button"
+                                        onclick="openModalReturnPinjam({{ json_encode($item) }})"
+                                        class="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] shadow-xs transition cursor-pointer flex items-center gap-1"
+                                        title="Proses Pengembalian Aset"
+                                    >
+                                        <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                                        <span>Kembalikan</span>
+                                    </button>
                                 @else
-                                <span class="text-xs text-slate-400 font-medium">Selesai</span>
+                                    <span class="text-slate-400 text-[11px] italic">Selesai</span>
                                 @endif
                             </div>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="px-6 py-16 text-center">
-                            <div class="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center mx-auto mb-3">
-                                <i data-lucide="inbox" class="w-6 h-6"></i>
-                            </div>
-                            <div class="text-slate-700 dark:text-slate-300 font-bold text-sm">Belum Ada Transaksi Peminjaman</div>
-                            <p class="text-xs text-slate-400 mt-1 max-w-sm mx-auto">Klik tombol "Buat Permohonan Pinjam Aset" di atas untuk mencatat peminjaman unit operasional.</p>
+                        <td colspan="6" class="p-12 text-center text-slate-400">
+                            <i data-lucide="handshake" class="w-10 h-10 mx-auto text-slate-300 mb-2"></i>
+                            <p class="font-bold text-slate-600 dark:text-slate-300">Tidak ada riwayat peminjaman aset</p>
+                            <p class="text-[11px] text-slate-400">Buat permohonan pinjam aset untuk mencatat penggunaan operasional staf.</p>
                         </td>
                     </tr>
                     @endforelse
@@ -224,229 +215,137 @@
         </div>
 
         @if(method_exists($loans, 'links'))
-        <div class="p-4 border-t border-slate-200 dark:border-slate-800">
-            {{ $loans->links() }}
-        </div>
+            <div class="p-4 border-t border-slate-100 dark:border-slate-800">
+                {{ $loans->links() }}
+            </div>
         @endif
     </div>
-
 </div>
 
-<!-- Modal Tambah Peminjaman (1:1 Identik React App) -->
-<div id="modalTambahPinjam" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
-    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150">
-        <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
-            <div class="flex items-center gap-2.5">
-                <div class="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 flex items-center justify-center shrink-0">
-                    <i data-lucide="handshake" class="w-5 h-5"></i>
-                </div>
-                <div>
-                    <h3 class="font-black text-slate-900 dark:text-white text-base">Permohonan Pinjam Aset</h3>
-                    <p class="text-xs text-slate-400">Peminjaman aset operasional kantor antar pegawai</p>
-                </div>
-            </div>
-            <button
-                type="button"
-                onclick="document.getElementById('modalTambahPinjam').classList.add('hidden')"
-                class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-            >
+<!-- Modal Tambah Peminjaman -->
+<div id="modalTambahPinjam" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 w-full max-w-lg p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto custom-scrollbar">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+            <h3 class="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                <i data-lucide="handshake" class="w-5 h-5 text-blue-500"></i>
+                Buat Permohonan Pinjam Aset
+            </h3>
+            <button type="button" onclick="closeModalTambahPinjam()" class="text-slate-400 hover:text-slate-600 cursor-pointer">
                 <i data-lucide="x" class="w-5 h-5"></i>
             </button>
         </div>
 
-        <form action="{{ route('peminjaman.store') }}" method="POST" class="space-y-4">
+        <form method="POST" action="{{ route('peminjaman.store') }}" class="space-y-4 text-xs font-medium">
             @csrf
-
-            <!-- Pilih Aset -->
             <div>
-                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
-                    Pilih Barang / Aset <span class="text-rose-500">*</span>
-                </label>
-                <select
-                    name="inventaris_id"
-                    required
-                    class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-white"
-                >
-                    <option value="" disabled selected>-- Pilih Aset yang Tersedia --</option>
-                    @foreach($inventaris as $inv)
-                        <option value="{{ $inv->id }}">
-                            [{{ $inv->kode_barang }}] {{ $inv->nama_barang }} (Tersedia: {{ $inv->stok }} {{ $inv->satuan ?? 'Unit' }})
+                <label class="block font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Pilih Barang / Aset Tersedia *</label>
+                <select name="inventaris_id" required class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    <option value="">-- Pilih Barang Dari Katalog --</option>
+                    @foreach($inventaris as $ast)
+                        <option value="{{ $ast->id }}">
+                            {{ $ast->kode_barang }} - {{ $ast->nama_barang }} (Sisa Stok: {{ $ast->stok }} Unit)
                         </option>
                     @endforeach
                 </select>
             </div>
 
-            <!-- Pilih Karyawan -->
-            <div>
-                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
-                    Peminjam (Pegawai) <span class="text-rose-500">*</span>
-                </label>
-                <select
-                    name="karyawan_id"
-                    required
-                    class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-white"
-                >
-                    <option value="" disabled selected>-- Pilih Pegawai Peminjam --</option>
-                    @foreach($karyawans as $kar)
-                        <option value="{{ $kar->id }}">
-                            {{ $kar->nama }} (NIK: {{ $kar->nik }} - {{ $kar->departemen->nama ?? 'Umum' }})
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-
-            <!-- Tanggal Pinjam & Kembali -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
-                        Tanggal Pinjam <span class="text-rose-500">*</span>
-                    </label>
-                    <input
-                        type="date"
-                        name="tanggal_pinjam"
-                        value="{{ date('Y-m-d') }}"
-                        required
-                        class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-white"
-                    >
+                    <label class="block font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Pegawai Peminjam *</label>
+                    <select name="karyawan_id" required class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <option value="">-- Pilih Pegawai --</option>
+                        @foreach($karyawans as $kry)
+                            <option value="{{ $kry->id }}">{{ $kry->nama }} ({{ $kry->departemen }})</option>
+                        @endforeach
+                    </select>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
-                        Rencana Kembali <span class="text-rose-500">*</span>
-                    </label>
-                    <input
-                        type="date"
-                        name="tanggal_kembali"
-                        value="{{ date('Y-m-d', strtotime('+3 days')) }}"
-                        required
-                        class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-white"
-                    >
+                    <label class="block font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Jumlah Unit Dipinjam *</label>
+                    <input type="number" name="jumlah" required min="1" value="1" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono" />
                 </div>
             </div>
 
-            <!-- Jumlah -->
-            <div>
-                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
-                    Jumlah Unit Dipinjam <span class="text-rose-500">*</span>
-                </label>
-                <input
-                    type="number"
-                    name="jumlah"
-                    min="1"
-                    value="1"
-                    required
-                    class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-blue-600 focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-blue-400"
-                >
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="block font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Tanggal Mulai Pinjam *</label>
+                    <input type="date" name="tanggal_pinjam" required value="{{ date('Y-m-d') }}" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Tanggal Rencana Kembali (Tempo) *</label>
+                    <input type="date" name="tanggal_kembali" required value="{{ date('Y-m-d', strtotime('+3 days')) }}" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+                </div>
             </div>
 
-            <!-- Keperluan -->
             <div>
-                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
-                    Keperluan Pinjam <span class="text-rose-500">*</span>
-                </label>
-                <input
-                    type="text"
-                    name="keperluan"
-                    required
-                    placeholder="Contoh: Presentasi Klien / Meeting Luar Kota / Pameran"
-                    class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-white"
-                >
+                <label class="block font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Keperluan / Tujuan Pinjam *</label>
+                <textarea name="keperluan" required rows="2" placeholder="Contoh: Kegiatan presentasi rapat koordinasi dinas luar kota..." class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
             </div>
 
-            <!-- Tombol Aksi -->
-            <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
-                <button
-                    type="button"
-                    onclick="document.getElementById('modalTambahPinjam').classList.add('hidden')"
-                    class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold text-xs transition cursor-pointer"
-                >
-                    Batal
-                </button>
-                <button
-                    type="submit"
-                    class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs shadow-md shadow-blue-600/20 active:scale-95 transition cursor-pointer"
-                >
-                    <i data-lucide="check" class="w-4 h-4"></i>
-                    Simpan Peminjaman
-                </button>
+            <div>
+                <label class="block font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Catatan Tambahan / Aksesoris Kelengkapan</label>
+                <input type="text" name="catatan" placeholder="Contoh: Termasuk tas laptop, charger original, dan dongle HDMI" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                <button type="button" onclick="closeModalTambahPinjam()" class="px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold cursor-pointer">Batal</button>
+                <button type="submit" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold shadow-md shadow-blue-600/20 cursor-pointer">Simpan Permohonan</button>
             </div>
         </form>
     </div>
 </div>
 
-<!-- Modal Return / Pengembalian Aset -->
-<div id="modalReturn" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
-    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
-        <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
-            <h3 class="font-bold text-slate-900 dark:text-white text-base">Konfirmasi Pengembalian Aset</h3>
-            <button
-                type="button"
-                onclick="document.getElementById('modalReturn').classList.add('hidden')"
-                class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-            >
+<!-- Modal Pengembalian Aset -->
+<div id="modalReturnPinjam" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 w-full max-w-md p-6 shadow-2xl space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+            <h3 class="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                <i data-lucide="rotate-ccw" class="w-5 h-5 text-emerald-500"></i>
+                Pengembalian Aset Fisik
+            </h3>
+            <button type="button" onclick="closeModalReturnPinjam()" class="text-slate-400 hover:text-slate-600 cursor-pointer">
                 <i data-lucide="x" class="w-5 h-5"></i>
             </button>
         </div>
 
-        <form id="formReturn" method="POST" action="" class="space-y-4">
+        <form id="formReturnPinjam" method="POST" action="" class="space-y-4 text-xs font-medium">
             @csrf
             <div>
-                <p id="returnDocNum" class="text-xs font-mono font-bold text-blue-600 dark:text-blue-400"></p>
-                <p id="returnItemName" class="text-sm font-bold text-slate-900 dark:text-white mt-0.5"></p>
-            </div>
-
-            <div>
-                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
-                    Kondisi Fisik Saat Dikembalikan <span class="text-rose-500">*</span>
-                </label>
-                <select
-                    name="kondisi_sesudah"
-                    required
-                    class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-none dark:text-white"
-                >
-                    <option value="Baik" selected>Baik (Lengkap & Berfungsi Normal)</option>
-                    <option value="Rusak Ringan">Rusak Ringan (Perlu Pembersihan / Cacat Kosmetik)</option>
-                    <option value="Rusak Berat">Rusak Berat (Tidak Berfungsi / Perlu Servis)</option>
+                <label class="block font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Kondisi Fisik Saat Dikembalikan *</label>
+                <select name="kondisi_sesudah" required class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    <option value="Baik">✅ Baik (Utuh, Berfungsi Normal, Lengkap)</option>
+                    <option value="Rusak Ringan">⚠️ Rusak Ringan (Perlu Pembersihan / Servis Kecil)</option>
+                    <option value="Rusak Berat">❌ Rusak Berat (Mati Total / Ada Komponen Rusak)</option>
                 </select>
             </div>
 
             <div>
-                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
-                    Catatan Pengembalian (Opsional)
-                </label>
-                <textarea
-                    name="catatan"
-                    rows="2"
-                    placeholder="Kelengkapan adapter, tas, remote, atau catatan fisik..."
-                    class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-none dark:text-white"
-                ></textarea>
+                <label class="block font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Catatan Penerimaan Kembali</label>
+                <textarea name="catatan" rows="3" placeholder="Contoh: Diterima kembali lengkap dan telah dicek fungsionalitasnya..." class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"></textarea>
             </div>
 
-            <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
-                <button
-                    type="button"
-                    onclick="document.getElementById('modalReturn').classList.add('hidden')"
-                    class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-semibold text-xs"
-                >
-                    Batal
-                </button>
-                <button
-                    type="submit"
-                    class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 active:scale-95 transition cursor-pointer"
-                >
-                    Selesaikan Pengembalian
-                </button>
+            <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                <button type="button" onclick="closeModalReturnPinjam()" class="px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold cursor-pointer">Batal</button>
+                <button type="submit" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md shadow-emerald-600/20 cursor-pointer">Konfirmasi Pengembalian</button>
             </div>
         </form>
     </div>
 </div>
 
 <script>
-function openReturnModal(id, docNum, itemName) {
-    const form = document.getElementById('formReturn');
-    form.action = `/peminjaman/${id}/return`;
-    document.getElementById('returnDocNum').textContent = docNum;
-    document.getElementById('returnItemName').textContent = itemName;
-    document.getElementById('modalReturn').classList.remove('hidden');
-}
+    function openModalTambahPinjam() {
+        document.getElementById('modalTambahPinjam').classList.remove('hidden');
+    }
+    function closeModalTambahPinjam() {
+        document.getElementById('modalTambahPinjam').classList.add('hidden');
+    }
+
+    function openModalReturnPinjam(data) {
+        const form = document.getElementById('formReturnPinjam');
+        form.action = '/peminjaman/' + data.id + '/return';
+        document.getElementById('modalReturnPinjam').classList.remove('hidden');
+    }
+    function closeModalReturnPinjam() {
+        document.getElementById('modalReturnPinjam').classList.add('hidden');
+    }
 </script>
 @endsection
